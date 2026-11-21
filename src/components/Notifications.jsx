@@ -123,7 +123,7 @@ function Notifications({ user, onNavigate }) {
   }
 
   return (
-    <div className="relative z-50">
+    <div className="relative z-auto">
       <button
         type="button"
         onClick={() => {
