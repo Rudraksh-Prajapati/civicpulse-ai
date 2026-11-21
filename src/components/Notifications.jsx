@@ -9,21 +9,21 @@ import {
 } from '../lib/notifications'
 
 function Notifications({ user, onNavigate }) {
-const [notifications, setNotifications] = useState([])
-const [isOpen, setIsOpen] = useState(false)
-const [loading, setLoading] = useState(false)
-const [error, setError] = useState('')
-const [toast, setToast] = useState(null)
+  const [notifications, setNotifications] = useState([])
+  const [isOpen, setIsOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [toast, setToast] = useState(null)
 
-useEffect(() => {
-  if (!toast) return
+  useEffect(() => {
+    if (!toast) return
 
-  const timer = setTimeout(() => {
-    setToast(null)
-  }, 4000)
+    const timer = setTimeout(() => {
+      setToast(null)
+    }, 4000)
 
-  return () => clearTimeout(timer)
-}, [toast])
+    return () => clearTimeout(timer)
+  }, [toast])
 
   const unreadCount = notifications.filter(
     (item) => !item.is_read
@@ -58,16 +58,16 @@ useEffect(() => {
       if (!active) return
 
       if (payload.eventType === 'INSERT') {
-  setNotifications((previous) => {
-    if (previous.some((item) => item.id === payload.new.id)) {
-      return previous
-    }
+        setNotifications((previous) => {
+          if (previous.some((item) => item.id === payload.new.id)) {
+            return previous
+          }
 
-    return [payload.new, ...previous].slice(0, 20)
-  })
+          return [payload.new, ...previous].slice(0, 20)
+        })
 
-  setToast(payload.new)
-}
+        setToast(payload.new)
+      }
 
       if (payload.eventType === 'UPDATE') {
         setNotifications((previous) =>
@@ -123,14 +123,14 @@ useEffect(() => {
   }
 
   return (
-    <div className="relative">
+    <div className="relative z-50">
       <button
         type="button"
         onClick={() => {
           setIsOpen((previous) => !previous)
           setError('')
         }}
-        className="relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-slate-900 text-xl transition hover:border-blue-500/40 hover:bg-slate-800"
+        className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-slate-900 text-xl transition hover:border-blue-500/40 hover:bg-slate-800"
         aria-label="Notifications"
         aria-expanded={isOpen}
       >
@@ -152,9 +152,17 @@ useEffect(() => {
             onClick={() => setIsOpen(false)}
           />
 
-          <div className="absolute right-0 top-14 z-50 w-80 max-w-[90vw] overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl sm:w-96">
-            <div className="flex items-center justify-between border-b border-white/10 p-4">
-              <div>
+          <div className="
+  fixed left-3 right-3 top-36 z-[60]
+  max-h-[65vh]
+  overflow-hidden rounded-2xl
+  border border-white/10
+  bg-slate-900 shadow-2xl
+  sm:absolute sm:left-auto sm:right-0
+  sm:top-14 sm:w-96 sm:max-h-none
+">
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4">
+              <div className="min-w-0">
                 <h3 className="font-semibold text-white">
                   Notifications
                 </h3>
@@ -167,7 +175,7 @@ useEffect(() => {
                 type="button"
                 onClick={markAllAsRead}
                 disabled={unreadCount === 0}
-                className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-40"
+                className="shrink-0 text-xs text-blue-400 hover:text-blue-300 disabled:opacity-40"
               >
                 Mark all read
               </button>
@@ -179,7 +187,7 @@ useEffect(() => {
               </p>
             )}
 
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-[min(65vh,24rem)] overflow-y-auto">
               {loading && notifications.length === 0 ? (
                 <p className="p-6 text-center text-sm text-slate-400">
                   Loading notifications...
@@ -200,15 +208,15 @@ useEffect(() => {
                     key={notification.id}
                     type="button"
                     onClick={async () => {
-  await markAsRead(notification.id)
-  setIsOpen(false)
+                      await markAsRead(notification.id)
+                      setIsOpen(false)
 
-  if (notification.report_id) {
-    onNavigate?.('My Reports', notification.report_id)
-  } else {
-    onNavigate?.('My Reports')
-  }
-}}
+                      if (notification.report_id) {
+                        onNavigate?.('My Reports', notification.report_id)
+                      } else {
+                        onNavigate?.('My Reports')
+                      }
+                    }}
                     className={`block w-full border-b border-white/5 p-4 text-left transition hover:bg-slate-800 ${
                       notification.is_read
                         ? 'opacity-60'
@@ -216,16 +224,16 @@ useEffect(() => {
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <span className="mt-1 text-lg">
+                      <span className="mt-1 shrink-0 text-lg">
                         📢
                       </span>
 
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-white">
+                        <p className="break-words text-sm font-semibold text-white">
                           {notification.title}
                         </p>
 
-                        <p className="mt-1 text-xs leading-5 text-slate-400">
+                        <p className="mt-1 break-words text-xs leading-5 text-slate-400">
                           {notification.message}
                         </p>
 
@@ -250,13 +258,13 @@ useEffect(() => {
             </div>
           </div>
         </>
-        )}
+      )}
 
       {toast && (
-        <div className="fixed right-5 top-5 z-[100] w-80 max-w-[calc(100vw-2.5rem)] animate-in slide-in-from-right-5 duration-300">
+        <div className="fixed right-3 top-5 z-[100] w-80 max-w-[calc(100vw-1.5rem)] animate-in slide-in-from-right-5 duration-300 sm:right-5">
           <div className="overflow-hidden rounded-2xl border border-blue-500/30 bg-slate-900 shadow-2xl shadow-blue-950/40">
             <div className="flex items-center gap-3 border-b border-white/10 bg-blue-500/10 px-4 py-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/20 text-lg">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 text-lg">
                 🔔
               </span>
 
@@ -264,7 +272,7 @@ useEffect(() => {
                 <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">
                   New Notification
                 </p>
-                <p className="text-sm font-semibold text-white">
+                <p className="break-words text-sm font-semibold text-white">
                   {toast.title}
                 </p>
               </div>
@@ -272,7 +280,7 @@ useEffect(() => {
               <button
                 type="button"
                 onClick={() => setToast(null)}
-                className="text-lg text-slate-400 transition hover:text-white"
+                className="shrink-0 text-lg text-slate-400 transition hover:text-white"
                 aria-label="Dismiss notification"
               >
                 ×
@@ -280,7 +288,7 @@ useEffect(() => {
             </div>
 
             <div className="p-4">
-              <p className="text-sm leading-5 text-slate-300">
+              <p className="break-words text-sm leading-5 text-slate-300">
                 {toast.message}
               </p>
 
