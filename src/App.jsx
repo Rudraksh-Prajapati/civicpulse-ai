@@ -17,25 +17,6 @@ import Notifications from './components/Notifications'
 
 const ADMIN_ID = 'e6eebbc8-9037-4cc5-bae9-873a16f66e42'
 
-const CITIES = [
-  'Chandigarh',
-  'New Delhi',
-  'Delhi',
-  'Mumbai',
-  'Bengaluru',
-  'Hyderabad',
-  'Pune',
-  'Chennai',
-  'Kolkata',
-  'Jaipur',
-  'Lucknow',
-  'Kaithal',
-  'Gurugram',
-  'Noida',
-  'Dehradun',
-  'Amritsar',
-]
-
 function App() {
   const [activePage, setActivePage] = useState('City Reports')
   const [selectedReportId, setSelectedReportId] = useState(null)
@@ -48,11 +29,124 @@ function App() {
     () => !localStorage.getItem('civicpulse-city')
   )
 
+  // City search states
+  const [cityQuery, setCityQuery] = useState(
+    () => localStorage.getItem('civicpulse-city') || ''
+  )
+  const [citySuggestions, setCitySuggestions] = useState([])
+  const [cityLoading, setCityLoading] = useState(false)
+  const [cityError, setCityError] = useState('')
+
   const [adminUser, setAdminUser] = useState(null)
   const [citizenUser, setCitizenUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [authScreen, setAuthScreen] = useState('citizen')
   const [returnTo, setReturnTo] = useState('City Reports')
+
+  // Search Indian cities and towns
+  useEffect(() => {
+    const query = cityQuery.trim()
+
+    if (query.length < 2 || (selectedCity && query === selectedCity)) {
+      setCitySuggestions([])
+      setCityLoading(false)
+      setCityError('')
+      return
+    }
+
+    const controller = new AbortController()
+
+    const timer = setTimeout(async () => {
+      setCityLoading(true)
+      setCityError('')
+      setCitySuggestions([])
+
+      try {
+        const params = new URLSearchParams({
+          q: query,
+          limit: '20',
+          lang: 'en',
+          lat: '22.5',
+          lon: '79.0',
+        })
+
+        const response = await fetch(
+          `https://photon.komoot.io/api/?${params.toString()}`,
+          {
+            signal: controller.signal,
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error('City search is temporarily unavailable.')
+        }
+
+        const result = await response.json()
+
+        const allowedPlaceTypes = [
+          'city',
+          'town',
+          'village',
+          'municipality',
+          'hamlet',
+          'locality',
+          'suburb',
+        ]
+
+        const places = (result.features || [])
+          .filter((feature) => {
+            const properties = feature.properties || {}
+
+            return (
+              properties.country?.toLowerCase() === 'india' &&
+              allowedPlaceTypes.includes(properties.osm_value)
+            )
+          })
+          .map((feature) => {
+            const properties = feature.properties || {}
+
+            return {
+              name: properties.name || properties.city || '',
+              state:
+                properties.state ||
+                properties.county ||
+                properties.district ||
+                '',
+              type: properties.osm_value || 'place',
+            }
+          })
+          .filter((place) => place.name.trim() !== '')
+
+        // Remove duplicate city/state combinations
+        const uniquePlaces = places.filter(
+          (place, index, array) =>
+            array.findIndex(
+              (item) =>
+                item.name.toLowerCase() === place.name.toLowerCase() &&
+                item.state.toLowerCase() === place.state.toLowerCase()
+            ) === index
+        )
+
+        setCitySuggestions(uniquePlaces)
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('City search error:', error)
+          setCityError(
+            'Unable to search cities right now. Please try again.'
+          )
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setCityLoading(false)
+        }
+      }
+    }, 450)
+
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [cityQuery, selectedCity])
 
   // Restore authentication session
   useEffect(() => {
@@ -126,19 +220,34 @@ function App() {
     }
   }, [])
 
-  // Select and save city
+  // Select a suggestion without immediately navigating
+  const handleCitySuggestionSelect = (place) => {
+    setSelectedCity(place.name)
+    setCityQuery(place.name)
+    setCitySuggestions([])
+    setCityError('')
+  }
+
+  // Confirm and save selected city
   const handleCitySelect = (city) => {
     if (!city) return
 
     localStorage.setItem('civicpulse-city', city)
 
     setSelectedCity(city)
+    setCityQuery(city)
+    setCitySuggestions([])
+    setCityError('')
     setShowCityPicker(false)
     setActivePage('City Reports')
   }
 
   // Change city
   const handleChangeCity = () => {
+    setCityQuery('')
+    setSelectedCity('')
+    setCitySuggestions([])
+    setCityError('')
     setShowCityPicker(true)
   }
 
@@ -199,6 +308,18 @@ function App() {
     setActivePage('City Reports')
   }
 
+  // Continue to citizen sign-in
+  const handleContinueToSignIn = () => {
+    if (!selectedCity) return
+
+    localStorage.setItem('civicpulse-city', selectedCity)
+
+    setShowCityPicker(false)
+    setReturnTo('City Reports')
+    setAuthScreen('citizen')
+    setActivePage('Citizen Login')
+  }
+
   // Authentication loading screen
   if (authLoading) {
     return (
@@ -208,7 +329,7 @@ function App() {
     )
   }
 
-  // City selection
+  // City selection screen
   if (!selectedCity || showCityPicker) {
     return (
       <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#171512] px-5 py-12 text-white">
@@ -219,6 +340,7 @@ function App() {
 
         <div className="relative z-10 w-full max-w-[560px] rounded-[30px] border border-[#e3ad82]/20 bg-[#211d18]/95 p-7 shadow-2xl backdrop-blur-2xl sm:p-10">
 
+          {/* Branding */}
           <div className="mb-8 flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#edb17e] to-[#a95632] text-2xl font-black text-[#27160e]">
               C
@@ -235,6 +357,7 @@ function App() {
             </div>
           </div>
 
+          {/* Heading */}
           <div className="mb-8">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[3px] text-[#e4a477]">
               YOUR CITY, YOUR COMMUNITY
@@ -251,24 +374,112 @@ function App() {
             </p>
           </div>
 
-          <label className="mb-3 block text-sm font-medium text-[#e4d9cb]">
-            Select your city
+          {/* City search */}
+          <label
+            htmlFor="city-search"
+            className="mb-3 block text-sm font-medium text-[#e4d9cb]"
+          >
+            Search your city or town
           </label>
 
-          <select
-            value={selectedCity}
-            onChange={(e) => setSelectedCity(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-[#12110e] px-4 py-4 text-sm text-white outline-none focus:border-[#d28a5b]"
-          >
-            <option value="">Choose a city</option>
+          <div className="relative">
+            <div className="relative">
+              <input
+                id="city-search"
+                type="text"
+                value={cityQuery}
+                onChange={(e) => {
+                  setCityQuery(e.target.value)
+                  setSelectedCity('')
+                  setCityError('')
+                }}
+                placeholder="Type a city name..."
+                autoComplete="off"
+                className="w-full rounded-xl border border-white/10 bg-[#12110e] px-4 py-4 pr-12 text-sm text-white outline-none transition placeholder:text-[#777067] focus:border-[#d28a5b]"
+              />
 
-            {CITIES.map((city) => (
-              <option key={city} value={city}>
-                {city}
-              </option>
-            ))}
-          </select>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#e9a16e]">
+                {cityLoading ? (
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#e9a16e] border-t-transparent" />
+                ) : (
+                  '⌕'
+                )}
+              </span>
+            </div>
 
+            {/* Search results */}
+            {citySuggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-[#211d18] shadow-2xl">
+
+                {citySuggestions.map((place, index) => (
+                  <button
+                    key={`${place.name}-${place.state}-${index}`}
+                    type="button"
+                    onClick={() => handleCitySuggestionSelect(place)}
+                    className={`flex w-full items-center justify-between gap-3 border-b border-white/5 px-4 py-3 text-left transition last:border-b-0 hover:bg-[#d28a5b]/10 ${
+                      selectedCity === place.name
+                        ? 'bg-[#d28a5b]/10'
+                        : ''
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white">
+                        {place.name}
+                      </p>
+
+                      <p className="mt-1 text-xs text-[#aaa095]">
+                        {place.state
+                          ? `${place.state}, India`
+                          : 'India'}
+                      </p>
+                    </div>
+
+                    <span className="shrink-0 text-[#e9a16e]">
+                      →
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Search status */}
+          {cityLoading && (
+            <p className="mt-3 text-xs text-[#e9a16e]">
+              Searching Indian cities and towns...
+            </p>
+          )}
+
+          {cityError && (
+            <p className="mt-3 text-xs text-red-400">
+              {cityError}
+            </p>
+          )}
+
+          {!cityLoading &&
+            !cityError &&
+            cityQuery.trim().length >= 2 &&
+            citySuggestions.length === 0 &&
+            !selectedCity && (
+              <p className="mt-3 text-xs text-[#aaa095]">
+                No matching Indian locations found. Try another spelling.
+              </p>
+            )}
+
+          {selectedCity && (
+            <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#d28a5b]/30 bg-[#d28a5b]/10 px-4 py-3">
+              <span className="text-[#e9a16e]">✓</span>
+
+              <p className="text-sm text-white">
+                Selected city:
+                <span className="ml-1 font-semibold text-[#e9a16e]">
+                  {selectedCity}
+                </span>
+              </p>
+            </div>
+          )}
+
+          {/* Explore */}
           <button
             onClick={() => handleCitySelect(selectedCity)}
             disabled={!selectedCity}
@@ -287,17 +498,10 @@ function App() {
             <div className="h-px flex-1 bg-white/10" />
           </div>
 
+          {/* Citizen sign in */}
           <button
             disabled={!selectedCity}
-            onClick={() => {
-              if (!selectedCity) return
-
-              localStorage.setItem('civicpulse-city', selectedCity)
-              setShowCityPicker(false)
-              setReturnTo('City Reports')
-              setAuthScreen('citizen')
-              setActivePage('Citizen Login')
-            }}
+            onClick={handleContinueToSignIn}
             className="w-full rounded-xl border border-[#d28a5b]/40 py-3.5 text-sm font-semibold text-[#e9b58e] transition hover:bg-[#d28a5b]/10 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Continue to Citizen Sign In
@@ -383,7 +587,7 @@ function App() {
 
           <div className="flex items-center gap-3">
 
-            {/* GLOBAL CITIZEN NOTIFICATIONS */}
+            {/* Global citizen notifications */}
             {citizenUser && (
               <Notifications
                 user={citizenUser}
@@ -413,42 +617,42 @@ function App() {
           </div>
         </div>
 
-        {/* PUBLIC CITY REPORTS */}
+        {/* Public city reports */}
         {activePage === 'City Reports' && (
           <CityReports city={selectedCity} />
         )}
 
-        {/* PUBLIC CITY OVERVIEW */}
+        {/* Public city overview */}
         {activePage === 'Overview' && (
           <Dashboard city={selectedCity} />
         )}
 
-        {/* REPORT SUBMISSION */}
+        {/* Report submission */}
         {activePage === 'Report an Issue' && (citizenUser || adminUser) && (
           <ReportIssue city={selectedCity} />
         )}
 
-        {/* PERSONAL REPORTS */}
+        {/* Personal reports */}
         {activePage === 'My Reports' && (citizenUser || adminUser) && (
           <MyReports selectedReportId={selectedReportId} />
         )}
 
-        {/* PUBLIC CITY MAP */}
+        {/* Public city map */}
         {activePage === 'Map View' && (
           <MapView city={selectedCity} />
         )}
 
-        {/* PERSONAL SETTINGS */}
+        {/* Personal settings */}
         {activePage === 'Settings' && (citizenUser || adminUser) && (
           <Settings />
         )}
 
-        {/* HELP AND SUPPORT */}
+        {/* Help and support */}
         {activePage === 'Help & Support' && (
           <HelpSupport />
         )}
 
-        {/* ACCOUNT */}
+        {/* Account */}
         {activePage === 'Citizen Login' && (citizenUser || adminUser) && (
           <main className="p-8 text-white">
             <h1 className="text-3xl font-bold">Account</h1>
@@ -466,7 +670,7 @@ function App() {
           </main>
         )}
 
-        {/* ADMIN DASHBOARD */}
+        {/* Admin dashboard */}
         {activePage === 'Admin Dashboard' && adminUser && (
           <AdminDashboard />
         )}
