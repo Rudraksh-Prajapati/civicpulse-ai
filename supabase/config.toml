@@ -1,0 +1,44 @@
+
+[functions.classify-issue]
+enabled = true
+verify_jwt = false
+import_map = "./functions/classify-issue/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/classify-issue/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/classify-issue/*.html" ]
+
+[functions.detect-duplicate]
+enabled = true
+verify_jwt = false
+import_map = "./functions/detect-duplicate/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/detect-duplicate/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/detect-duplicate/*.html" ]
+
+[functions.verify-image]
+enabled = true
+verify_jwt = false
+import_map = "./functions/verify-image/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/verify-image/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/verify-image/*.html" ]
+
+[functions.civic-insights]
+enabled = true
+verify_jwt = false
+import_map = "./functions/civic-insights/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/civic-insights/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/civic-insights/*.html" ]
