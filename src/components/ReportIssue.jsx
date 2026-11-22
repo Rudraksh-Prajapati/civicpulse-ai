@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import {
@@ -10,11 +9,11 @@ import {
 function ReportIssue() {
   const [form, setForm] = useState({
     title: '',
-    category: 'Roads',
+    category: '',
     description: '',
-    city: 'Chandigarh',
+    city: '',
     area: '',
-    priority: 'Medium',
+    priority: '',
   })
 
   const [image, setImage] = useState(null)
@@ -187,6 +186,20 @@ function ReportIssue() {
     e.preventDefault()
     setSuccess(false)
     setError('')
+
+    // Validate required fields
+    if (
+      !form.title.trim() ||
+      !form.category ||
+      !form.description.trim() ||
+      !form.city.trim() ||
+      !form.area.trim() ||
+      !form.priority
+    ) {
+      setError('Please complete all required fields before submitting.')
+      return
+    }
+
     setLoading(true)
 
     const reportId = `CP-${Date.now()}`
@@ -198,8 +211,8 @@ function ReportIssue() {
         await supabase
           .from('reports')
           .select('id, title, category, description, city, area, status')
-          .eq('city', form.city)
-          .eq('area', form.area)
+          .eq('city', form.city.trim())
+          .eq('area', form.area.trim())
           .eq('category', form.category)
           .neq('status', 'Resolved')
           .limit(20)
@@ -242,8 +255,8 @@ function ReportIssue() {
         const aiDuplicateResult = await detectDuplicate({
           title: form.title,
           description: form.description,
-          city: form.city,
-          area: form.area,
+          city: form.city.trim(),
+          area: form.area.trim(),
           category: form.category,
         })
 
@@ -335,6 +348,10 @@ function ReportIssue() {
       // Prepare report
       const report = {
         ...form,
+        city: form.city.trim(),
+        area: form.area.trim(),
+        title: form.title.trim(),
+        description: form.description.trim(),
         id: reportId,
         imageName: image?.name || null,
         imageUrl,
@@ -382,15 +399,16 @@ function ReportIssue() {
 
       setForm({
         title: '',
-        category: 'Roads',
+        category: '',
         description: '',
-        city: 'Chandigarh',
+        city: '',
         area: '',
-        priority: 'Medium',
+        priority: '',
       })
 
       setImage(null)
       setLocation(null)
+      setLocationError('')
       setAiSuggestion(null)
       setAiError('')
       setImageVerification(null)
@@ -402,13 +420,13 @@ function ReportIssue() {
       setError(err.message || 'Something went wrong. Please try again.')
     } finally {
       setLoading(false)
+      setImageVerificationLoading(false)
     }
   }
 
   return (
     <main className="min-h-screen min-w-0 flex-1 bg-[#101010] px-3 py-5 text-white sm:px-5 sm:py-7 lg:px-8 lg:py-8">
       <div className="mx-auto w-full max-w-3xl min-w-0">
-
         <div className="mb-6 sm:mb-8">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-400 sm:text-sm">
             Civic Reporting
@@ -462,16 +480,20 @@ function ReportIssue() {
                 name="category"
                 value={form.category}
                 onChange={handleChange}
+                required
                 className={inputClass}
               >
-                <option>Roads</option>
-                <option>Water Supply</option>
-                <option>Sanitation</option>
-                <option>Electricity</option>
-                <option>Streetlights</option>
-                <option>Drainage</option>
-                <option>Public Safety</option>
-                <option>Other</option>
+                <option value="" disabled>
+                  Select a category
+                </option>
+                <option value="Roads">Roads</option>
+                <option value="Water Supply">Water Supply</option>
+                <option value="Sanitation">Sanitation</option>
+                <option value="Electricity">Electricity</option>
+                <option value="Streetlights">Streetlights</option>
+                <option value="Drainage">Drainage</option>
+                <option value="Public Safety">Public Safety</option>
+                <option value="Other">Other</option>
               </select>
             </div>
 
@@ -482,12 +504,16 @@ function ReportIssue() {
                 name="priority"
                 value={form.priority}
                 onChange={handleChange}
+                required
                 className={inputClass}
               >
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
-                <option>Critical</option>
+                <option value="" disabled>
+                  Select priority
+                </option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
               </select>
             </div>
           </div>
@@ -596,6 +622,7 @@ function ReportIssue() {
                 value={form.city}
                 onChange={handleChange}
                 required
+                placeholder="Enter your city or use current location"
                 className={inputClass}
               />
             </div>

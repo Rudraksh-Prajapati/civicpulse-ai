@@ -29,7 +29,6 @@ function App() {
     () => !localStorage.getItem('civicpulse-city')
   )
 
-  // City search states
   const [cityQuery, setCityQuery] = useState(
     () => localStorage.getItem('civicpulse-city') || ''
   )
@@ -43,7 +42,6 @@ function App() {
   const [authScreen, setAuthScreen] = useState('citizen')
   const [returnTo, setReturnTo] = useState('City Reports')
 
-  // Search Indian cities and towns
   useEffect(() => {
     const query = cityQuery.trim()
 
@@ -72,9 +70,7 @@ function App() {
 
         const response = await fetch(
           `https://photon.komoot.io/api/?${params.toString()}`,
-          {
-            signal: controller.signal,
-          }
+          { signal: controller.signal }
         )
 
         if (!response.ok) {
@@ -117,7 +113,6 @@ function App() {
           })
           .filter((place) => place.name.trim() !== '')
 
-        // Remove duplicate city/state combinations
         const uniquePlaces = places.filter(
           (place, index, array) =>
             array.findIndex(
@@ -148,7 +143,6 @@ function App() {
     }
   }, [cityQuery, selectedCity])
 
-  // Restore authentication session
   useEffect(() => {
     let mounted = true
 
@@ -220,7 +214,6 @@ function App() {
     }
   }, [])
 
-  // Select a suggestion without immediately navigating
   const handleCitySuggestionSelect = (place) => {
     setSelectedCity(place.name)
     setCityQuery(place.name)
@@ -228,7 +221,6 @@ function App() {
     setCityError('')
   }
 
-  // Confirm and save selected city
   const handleCitySelect = (city) => {
     if (!city) return
 
@@ -242,7 +234,6 @@ function App() {
     setActivePage('City Reports')
   }
 
-  // Change city
   const handleChangeCity = () => {
     setCityQuery('')
     setSelectedCity('')
@@ -251,7 +242,6 @@ function App() {
     setShowCityPicker(true)
   }
 
-  // Navigation and access protection
   const handleNavigate = (page, reportId = null) => {
     if (reportId) {
       setSelectedReportId(reportId)
@@ -277,7 +267,6 @@ function App() {
     setActivePage(page)
   }
 
-  // Citizen login
   const handleCitizenLogin = (user) => {
     setCitizenUser(user)
     setAdminUser(null)
@@ -285,14 +274,12 @@ function App() {
     setActivePage(returnTo || 'City Reports')
   }
 
-  // Admin login
   const handleAdminLogin = (user) => {
     setAdminUser(user)
     setCitizenUser(null)
     setActivePage('Admin Dashboard')
   }
 
-  // Logout
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut()
 
@@ -308,7 +295,6 @@ function App() {
     setActivePage('City Reports')
   }
 
-  // Continue to citizen sign-in
   const handleContinueToSignIn = () => {
     if (!selectedCity) return
 
@@ -320,7 +306,6 @@ function App() {
     setActivePage('Citizen Login')
   }
 
-  // Authentication loading screen
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#171512] text-[#e9a16e]">
@@ -329,18 +314,13 @@ function App() {
     )
   }
 
-  // City selection screen
   if (!selectedCity || showCityPicker) {
     return (
       <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#171512] px-5 py-12 text-white">
-
         <div className="absolute -left-40 top-0 h-96 w-96 rounded-full bg-[#bd7043]/20 blur-[130px]" />
-
         <div className="absolute -right-40 bottom-0 h-96 w-96 rounded-full bg-[#d39a5b]/15 blur-[130px]" />
 
         <div className="relative z-10 w-full max-w-[560px] rounded-[30px] border border-[#e3ad82]/20 bg-[#211d18]/95 p-7 shadow-2xl backdrop-blur-2xl sm:p-10">
-
-          {/* Branding */}
           <div className="mb-8 flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#edb17e] to-[#a95632] text-2xl font-black text-[#27160e]">
               C
@@ -350,14 +330,12 @@ function App() {
               <h1 className="text-xl font-bold">
                 CivicPulse <span className="text-[#e9a16e]">AI</span>
               </h1>
-
               <p className="text-[10px] uppercase tracking-[3px] text-[#b9a995]">
                 Smarter Cities. Better Living.
               </p>
             </div>
           </div>
 
-          {/* Heading */}
           <div className="mb-8">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[3px] text-[#e4a477]">
               YOUR CITY, YOUR COMMUNITY
@@ -374,7 +352,6 @@ function App() {
             </p>
           </div>
 
-          {/* City search */}
           <label
             htmlFor="city-search"
             className="mb-3 block text-sm font-medium text-[#e4d9cb]"
@@ -407,10 +384,8 @@ function App() {
               </span>
             </div>
 
-            {/* Search results */}
             {citySuggestions.length > 0 && (
               <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-[#211d18] shadow-2xl">
-
                 {citySuggestions.map((place, index) => (
                   <button
                     key={`${place.name}-${place.state}-${index}`}
@@ -443,7 +418,6 @@ function App() {
             )}
           </div>
 
-          {/* Search status */}
           {cityLoading && (
             <p className="mt-3 text-xs text-[#e9a16e]">
               Searching Indian cities and towns...
@@ -479,7 +453,6 @@ function App() {
             </div>
           )}
 
-          {/* Explore */}
           <button
             onClick={() => handleCitySelect(selectedCity)}
             disabled={!selectedCity}
@@ -490,15 +463,12 @@ function App() {
 
           <div className="my-7 flex items-center gap-3">
             <div className="h-px flex-1 bg-white/10" />
-
             <span className="text-[10px] uppercase tracking-[2px] text-[#92887c]">
               OR
             </span>
-
             <div className="h-px flex-1 bg-white/10" />
           </div>
 
-          {/* Citizen sign in */}
           <button
             disabled={!selectedCity}
             onClick={handleContinueToSignIn}
@@ -515,11 +485,9 @@ function App() {
     )
   }
 
-  // Citizen login page
   if (activePage === 'Citizen Login' && !citizenUser && !adminUser) {
     return (
       <div className="relative min-h-screen bg-[#171512]">
-
         <button
           onClick={() => {
             setReturnTo('City Reports')
@@ -539,12 +507,10 @@ function App() {
             setActivePage('Admin Login')
           }}
         />
-
       </div>
     )
   }
 
-  // Admin login page
   if (activePage === 'Admin Login' && !adminUser) {
     return (
       <AdminLogin
@@ -559,21 +525,17 @@ function App() {
 
   return (
     <div className="flex min-h-screen bg-[#171512]">
-
-      {/* Sidebar */}
       <Sidebar
         activePage={activePage}
         setActivePage={handleNavigate}
         isAdmin={!!adminUser}
-        user={adminUser || citizenUser}
-        onLogout={handleLogout}
-      />
+         user={adminUser || citizenUser}
+  onLogout={handleLogout}
+/>
 
       <div className="min-w-0 flex-1 pt-16 md:pt-0">
-
         {/* Main toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-orange-500/10 bg-[#171512] px-5 py-4 text-white sm:px-8">
-
           <div>
             <p className="text-[10px] uppercase tracking-[2px] text-[#a99b8a]">
               Currently exploring
@@ -586,13 +548,42 @@ function App() {
           </div>
 
           <div className="flex items-center gap-3">
-
-            {/* Global citizen notifications */}
+            {/* Keep global notifications */}
             {citizenUser && (
               <Notifications
                 user={citizenUser}
                 onNavigate={handleNavigate}
               />
+            )}
+
+            {/* Direct account settings shortcut */}
+            {(citizenUser || adminUser) && (
+              <button
+                type="button"
+                onClick={() => handleNavigate('Settings')}
+                title="Account Settings"
+                aria-label="Open Account Settings"
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition ${
+                  activePage === 'Settings'
+                    ? 'border-orange-400 bg-orange-500/20 text-orange-300'
+                    : 'border-orange-500/30 bg-orange-500/10 text-orange-400 hover:border-orange-400 hover:bg-orange-500/20'
+                }`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="19"
+                  height="19"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M5 21a7 7 0 0 1 14 0" />
+                </svg>
+              </button>
             )}
 
             {!citizenUser && !adminUser && (
@@ -617,42 +608,35 @@ function App() {
           </div>
         </div>
 
-        {/* Public city reports */}
         {activePage === 'City Reports' && (
           <CityReports city={selectedCity} />
         )}
 
-        {/* Public city overview */}
         {activePage === 'Overview' && (
           <Dashboard city={selectedCity} />
         )}
 
-        {/* Report submission */}
         {activePage === 'Report an Issue' && (citizenUser || adminUser) && (
           <ReportIssue city={selectedCity} />
         )}
 
-        {/* Personal reports */}
         {activePage === 'My Reports' && (citizenUser || adminUser) && (
           <MyReports selectedReportId={selectedReportId} />
         )}
 
-        {/* Public city map */}
         {activePage === 'Map View' && (
           <MapView city={selectedCity} />
         )}
 
-        {/* Personal settings */}
+        {/* Supabase authenticated user passed to Settings */}
         {activePage === 'Settings' && (citizenUser || adminUser) && (
-          <Settings />
+          <Settings user={adminUser || citizenUser} />
         )}
 
-        {/* Help and support */}
         {activePage === 'Help & Support' && (
           <HelpSupport />
         )}
 
-        {/* Account */}
         {activePage === 'Citizen Login' && (citizenUser || adminUser) && (
           <main className="p-8 text-white">
             <h1 className="text-3xl font-bold">Account</h1>
@@ -670,7 +654,6 @@ function App() {
           </main>
         )}
 
-        {/* Admin dashboard */}
         {activePage === 'Admin Dashboard' && adminUser && (
           <AdminDashboard />
         )}
